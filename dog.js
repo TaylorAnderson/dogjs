@@ -40,7 +40,7 @@ Dog.prototype.behaviors = function () {
 	separation.mult(0.5);
 	align.mult(0.4);
 	boundaries.mult(2);
-
+	this.applyForce(separation);
 	this.applyForce(align);
 	this.applyForce(boundaries);
 }
@@ -53,8 +53,8 @@ Dog.prototype.align = function (dogs) {
 	for (var i = 0; i < dogs.length; i++) {
 		var v = dogs[i]
 		if (v !== this) {
-			var d = p5.Vector.sub(this.pos, v.pos)
-			if (d.mag() < 15)
+			var d = dist(this.pos.x, this.pos.y, v.pos.x, v.pos.y);
+			if (d < 15)
 			{
 				count++;
 				desired.add(v.vel.div(d));
@@ -62,13 +62,19 @@ Dog.prototype.align = function (dogs) {
 		}
 	}
 
-	if (count > 0) desired.div(count);
-	else desired = this.vel;
-	var steer = p5.Vector.sub(desired, this.vel);
-
-	steer.setMag(this.maxSpeed);
-	steer.limit(this.maxForce);
-	return steer;
+	if (count > 0) 
+	{
+		desired.div(count);
+		desired.normalize();
+		desired.mult(this.maxSpeed);
+		var steer = p5.Vector.sub(desired, this.vel);
+		steer.setMag(this.maxSpeed);
+		steer.limit(this.maxForce);
+		console.log(desired);
+		return steer;
+	}
+	else return createVector(0, 0);
+	
 }
 Dog.prototype.flee = function (t) {
 	var desired = p5.Vector.sub(t, this.pos);
