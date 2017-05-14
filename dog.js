@@ -7,7 +7,7 @@ function Dog() {
 	this.r = 8;
 	this.maxSpeed = 3;
 	this.maxForce = 0.3;
-	
+
 	this.layers = [
 		loadImage("dog/dog1.png"),
 		loadImage("dog/dog1.png"),
@@ -23,49 +23,49 @@ function Dog() {
 		loadImage("dog/dog6.png"),
 		loadImage("dog/dog7.png")
 	]
-	
+
 }
 
-Dog.prototype.update = function() {
+Dog.prototype.update = function () {
 	this.pos.add(this.vel);
 	this.vel.add(this.acc);
 	this.acc.mult(0);
 }
 
-Dog.prototype.behaviors = function() {
+Dog.prototype.behaviors = function () {
 	var align = this.align(dogs);
+	var boundaries = this.boundaries();
 	align.mult(0.5);
+	boundaries.mult(3);
 	this.applyForce(align);
+	this.applyForce(boundaries);
 }
-Dog.prototype.applyForce = function(f) {
+Dog.prototype.applyForce = function (f) {
 	this.acc.add(f);
-
 }
-Dog.prototype.align = function(dogs) {
+Dog.prototype.align = function (dogs) {
 	var neighbours = [];
 	var desired = createVector();
-	for (var i = 0; i < dogs.length; i++)
-	{
+	for (var i = 0; i < dogs.length; i++) {
 		var v = dogs[i]
-		if (v !== this)
-		{
+		if (v !== this) {
 			var d = p5.Vector.sub(this.pos, v.pos)
 			if (d.mag() < 15) neighbours.push(v);
 		}
 	}
-	neighbours.forEach(function(v, i) {
+	neighbours.forEach(function (v, i) {
 		desired.add(v.vel);
 	});
-	
+
 	if (neighbours.length > 0) desired.div(neighbours.length);
 	else desired = this.vel;
 	var steer = p5.Vector.sub(desired, this.vel);
-	
+
 	steer.setMag(this.maxSpeed);
 	steer.limit(this.maxForce);
 	return steer;
 }
-Dog.prototype.flee = function(t) {
+Dog.prototype.flee = function (t) {
 	var desired = p5.Vector.sub(t, this.pos);
 	var d = desired.mag();
 
@@ -79,7 +79,7 @@ Dog.prototype.flee = function(t) {
 	else return createVector(0, 0);
 
 }
-Dog.prototype.arrive = function(t) {
+Dog.prototype.arrive = function (t) {
 	var desired = p5.Vector.sub(t, this.pos);
 	var d = desired.mag();
 	var speed = this.maxSpeed;
@@ -90,46 +90,47 @@ Dog.prototype.arrive = function(t) {
 	return steer;
 
 }
-Dog.prototype.show = function() {
+Dog.prototype.show = function () {
 	push()
-	
-	var theta = this.vel.heading() + PI/2
-	
-	for (var i = 0; i < this.layers.length; i++)
-	{
+
+	var theta = this.vel.heading() + PI / 2
+
+	for (var i = 0; i < this.layers.length; i++) {
 		push();
-		translate(this.pos.x, this.pos.y-i);
+		translate(this.pos.x, this.pos.y - i);
 		if (this.vel.mag() > 0.01) rotate(theta);
 		var layer = this.layers[i];
-		image(layer,-layer.width/2, -layer.height/2);
+		image(layer, -layer.width / 2, -layer.height / 2);
 		pop();
 	}
 
 	pop();
 }
-Dog.prototype.boundaries = function() {
+Dog.prototype.boundaries = function () {
 
-    var desired = null;
+	var desired = null;
 
-    if (this.position.x < d) {
-      desired = createVector(this.maxspeed, this.velocity.y);
-    }
-    else if (this.position.x > width -d) {
-      desired = createVector(-this.maxspeed, this.velocity.y);
-    }
+	if (this.pos.x < 0) {
+		desired = createVector(this.maxSpeed, this.vel.y);
+	}
+	else if (this.pos.x > width ) {
+		desired = createVector(-this.maxSpeed, this.vel.y);
+	}
 
-    if (this.position.y < d) {
-      desired = createVector(this.velocity.x, this.maxspeed);
-    }
-    else if (this.position.y > height-d) {
-      desired = createVector(this.velocity.x, -this.maxspeed);
-    }
+	if (this.pos.y < 0) {
+		desired = createVector(this.vel.x, this.maxSpeed);
+	}
+	else if (this.pos.y > height) {
+		desired = createVector(this.vel.x, -this.maxSpeed);
+	}
 
-    if (desired !== null) {
-      desired.normalize();
-      desired.mult(this.maxspeed);
-      var steer = p5.Vector.sub(desired, this.velocity);
-      steer.limit(this.maxforce);
-      this.applyForce(steer);
-    }
-  };
+	if (desired !== null) {
+		desired.normalize();
+		desired.mult(this.maxSpeed);
+		var steer = p5.Vector.sub(desired, this.vel);
+		steer.limit(this.maxForce);
+		return steer;
+	}
+	return createVector(0, 0);
+	
+};
