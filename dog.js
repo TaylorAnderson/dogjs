@@ -35,8 +35,12 @@ Dog.prototype.update = function () {
 Dog.prototype.behaviors = function () {
 	var align = this.align(dogs);
 	var boundaries = this.boundaries();
-	align.mult(0.5);
-	boundaries.mult(3);
+	var separation = this.separation(dogs);
+
+	separation.mult(0.5);
+	align.mult(0.4);
+	boundaries.mult(2);
+
 	this.applyForce(align);
 	this.applyForce(boundaries);
 }
@@ -44,20 +48,21 @@ Dog.prototype.applyForce = function (f) {
 	this.acc.add(f);
 }
 Dog.prototype.align = function (dogs) {
-	var neighbours = [];
 	var desired = createVector();
+	var count = 0;
 	for (var i = 0; i < dogs.length; i++) {
 		var v = dogs[i]
 		if (v !== this) {
 			var d = p5.Vector.sub(this.pos, v.pos)
-			if (d.mag() < 15) neighbours.push(v);
+			if (d.mag() < 15)
+			{
+				count++;
+				desired.add(v.vel.div(d));
+			}
 		}
 	}
-	neighbours.forEach(function (v, i) {
-		desired.add(v.vel);
-	});
 
-	if (neighbours.length > 0) desired.div(neighbours.length);
+	if (count > 0) desired.div(count);
 	else desired = this.vel;
 	var steer = p5.Vector.sub(desired, this.vel);
 
@@ -79,6 +84,38 @@ Dog.prototype.flee = function (t) {
 	else return createVector(0, 0);
 
 }
+// Separation
+// Method checks for nearby dogs and steers away
+Dog.prototype.separation = function (dogs) {
+	var desiredSeparation = 20;
+	var sum = createVector();
+	var count = 0;
+	// For every boid in the system, check if it's too close
+	for (var i = 0; i < dogs.length; i++) {
+		var d = p5.Vector.dist(this.pos, dogs[i].pos);
+		// If the distance is greater than 0 and less than an arbitrary amount (0 when you are yourself)
+		if ((d > 0) && (d < desiredSeparation)) {
+			// Calculate vector pointing away from neighbor
+			var diff = p5.Vector.sub(this.pos, dogs[i].pos);
+			diff.normalize();
+			diff.div(d);        // Weight by distance
+			sum.add(diff);
+			count++;            // Keep track of how many
+		}
+	}
+	// Average -- divide by how many
+	if (count > 0) {
+		sum.div(count);
+		// Our desired vector is the average scaled to maximum speed
+		sum.normalize();
+		sum.mult(this.maxspeed);
+		// Implement Reynolds: Steering = Desired - Velocity
+		var steer = p5.Vector.sub(sum, this.velocity);
+		steer.limit(this.maxforce);
+		return steer;
+	}
+	else return createVector(0, 0);
+};
 Dog.prototype.arrive = function (t) {
 	var desired = p5.Vector.sub(t, this.pos);
 	var d = desired.mag();
@@ -113,7 +150,7 @@ Dog.prototype.boundaries = function () {
 	if (this.pos.x < 0) {
 		desired = createVector(this.maxSpeed, this.vel.y);
 	}
-	else if (this.pos.x > width ) {
+	else if (this.pos.x > width) {
 		desired = createVector(-this.maxSpeed, this.vel.y);
 	}
 
@@ -132,5 +169,5 @@ Dog.prototype.boundaries = function () {
 		return steer;
 	}
 	return createVector(0, 0);
-	
+
 };
