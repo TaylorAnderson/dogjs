@@ -1,0 +1,2 @@
+dogs should have names when u mouse over them
+all steering behaviors are unique
